@@ -1,0 +1,44 @@
+
+
+// Función para conectar a la base de datos
+function connectToDB(callback) {
+  // const client = new mongodb.MongoClient(url, {
+  //   useNewUrlParser: true,
+  //   useUnifiedTopology: true,
+  // });
+  const client = new mongodb.MongoClient(url);
+
+  client.connect((err, db) => {
+    if (err) {
+      console.error("Error al conectarse a la base de datos:", err);
+      callback(err, null);
+      return;
+    }
+    console.log("Conectado a la base de datos:", db.databaseName);
+    callback(null, db);
+  });
+}
+
+// Ruta para obtener los datos de la colección dataset1
+app.get("/", (req, res) => {
+  connectToDB((err, database) => {
+    if (err) {
+      res.status(500).send("Error al conectarse a la base de datos.");
+      return;
+    }
+    const collection = database.db('social_netword').collection('emotions');
+    collection.aggregate(numberTopics).toArray((err, result) => {
+      if (err) {
+        console.error("Error al obtener los datos:", err);
+        res
+          .status(500)
+          .json({ error: "Error al obtener los datos de la base de datos." });
+        return;
+      }
+      // Cerrar la conexión a la base de datos
+      database.close();
+      // Enviar los datos como respuesta en formato JSON
+      res.json(result);
+    });
+  });
+});
